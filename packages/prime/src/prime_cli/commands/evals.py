@@ -95,6 +95,7 @@ HOSTED_EVAL_CONFIG_EXTRA_FIELDS = {
     "timeout_minutes",
     "allow_sandbox_access",
     "allow_instances_access",
+    "allow_tunnel_access",
     "eval_name",
 }
 HOSTED_EVAL_CONFIG_FIELD_TYPES: dict[str, tuple[type[Any], str]] = {
@@ -104,6 +105,7 @@ HOSTED_EVAL_CONFIG_FIELD_TYPES: dict[str, tuple[type[Any], str]] = {
     "timeout_minutes": (int, "an integer"),
     "allow_sandbox_access": (bool, "a boolean"),
     "allow_instances_access": (bool, "a boolean"),
+    "allow_tunnel_access": (bool, "a boolean"),
     "max_tokens": (int, "an integer"),
     "max_concurrent": (int, "an integer"),
     "max_retries": (int, "an integer"),
@@ -135,6 +137,7 @@ HOSTED_SUPPORTED_VERIFIERS_FIELDS = {
 HOSTED_SUPPORTED_TOML_FIELDS = {
     "allow_instances_access",
     "allow_sandbox_access",
+    "allow_tunnel_access",
     "api_base_url",
     "api_client_type",
     "api_key_var",
@@ -479,6 +482,7 @@ def _build_hosted_evaluation_payload(config: HostedEvalConfig) -> dict[str, Any]
         "rollouts_per_example": config.rollouts_per_example,
         "allow_sandbox_access": config.allow_sandbox_access,
         "allow_instances_access": config.allow_instances_access,
+        "allow_tunnel_access": config.allow_tunnel_access,
     }
 
     if config.env_args:
@@ -1324,6 +1328,11 @@ def run_eval_cmd(
         "--allow-instances-access",
         help="Allow instance creation and management for hosted evaluations",
     ),
+    allow_tunnel_access: bool = typer.Option(
+        False,
+        "--allow-tunnel-access",
+        help="Allow tunnel creation and management for hosted evaluations",
+    ),
     custom_secrets: Optional[str] = typer.Option(
         None,
         "--custom-secrets",
@@ -1375,6 +1384,7 @@ def run_eval_cmd(
             "--timeout-minutes": timeout_minutes is not None,
             "--allow-sandbox-access": allow_sandbox_access,
             "--allow-instances-access": allow_instances_access,
+            "--allow-tunnel-access": allow_tunnel_access,
             "--custom-secrets": custom_secrets is not None,
             "--eval-name": eval_name is not None,
         }
@@ -1418,6 +1428,7 @@ def run_eval_cmd(
                     "timeout_minutes": None,
                     "allow_sandbox_access": False,
                     "allow_instances_access": False,
+                    "allow_tunnel_access": False,
                     "sampling_args": None,
                     "max_concurrent": None,
                     "max_retries": None,
@@ -1529,6 +1540,11 @@ def run_eval_cmd(
                         if allow_instances_access
                         else target_config.get("allow_instances_access", False)
                     ),
+                    "allow_tunnel_access": (
+                        allow_tunnel_access
+                        if allow_tunnel_access
+                        else target_config.get("allow_tunnel_access", False)
+                    ),
                     "custom_secrets": parsed_custom_secrets,
                     "sampling_args": effective_sampling_args,
                     "max_concurrent": (
@@ -1595,6 +1611,7 @@ def run_eval_cmd(
                 target.get("timeout_minutes"),
                 target.get("allow_sandbox_access", False),
                 target.get("allow_instances_access", False),
+                target.get("allow_tunnel_access", False),
                 _freeze_json_value(target.get("sampling_args")),
                 target.get("max_concurrent"),
                 target.get("max_retries"),
@@ -1648,6 +1665,7 @@ def run_eval_cmd(
                     timeout_minutes=target.get("timeout_minutes"),
                     allow_sandbox_access=target.get("allow_sandbox_access", False),
                     allow_instances_access=target.get("allow_instances_access", False),
+                    allow_tunnel_access=target.get("allow_tunnel_access", False),
                     custom_secrets=target.get("custom_secrets"),
                     sampling_args=target.get("sampling_args"),
                     max_concurrent=target.get("max_concurrent"),
